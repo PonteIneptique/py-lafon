@@ -1,18 +1,45 @@
-from math import factorial
 from typing import Union
 from fractions import Fraction
+from decimal import Decimal, getcontext
+from math import exp, pi, floor, factorial, sqrt, pow, log, e
+import numpy as np
 
 
-def x_over_y(x: int, y: int) -> Fraction:
+getcontext().prec = 10
+
+
+def st(n):
+    """ Stirling approximation
+
+    Source: https://www.geeksforgeeks.org/calculating-factorials-using-stirling-approximation/
+    """
+    if n == 1:
+        return 1
+
+    # evaluating factorial using
+    # stirling approximation
+    n = np.array([n], dtype=np.float32)
+    return np.sqrt(2*np.pi * n) * (n / np.e) ** n
+    z = (sqrt(2 * pi * n) * pow((n / e), n))
+    return floor(z)
+
+
+def x_over_y(x: int, y: int) -> Decimal:
     """ Computes (T t) kind of calculus
 
-    >>> x_over_y(5, 3)
+    :param x: Factorial Nominator
+    :param y: Factorial Denominator
+
+    >>> x_over_y(5, 3, s=False)
     Fraction(10, 1)
+
+    >>> x_over_y(5, 3, s=True)
+    0.1
     """
-    return Fraction(factorial(x), (factorial(y) * factorial(x-y)))
+    return st(x) / (st(y) * st(x - y))
 
 
-def prob_x(f: int, k: int, T: int, t: int) -> Fraction:
+def prob_x_form_1(f: int, k: int, T: int, t: int) -> Decimal:
     """ Computes probability of X = k in Lafon's paper
 
     Parameters are renamed but they are basically:
@@ -24,15 +51,15 @@ def prob_x(f: int, k: int, T: int, t: int) -> Fraction:
     Examples from the paper in p. 139
 
     Prob(AAA)
-    >>> prob_x(f=3, k=3, T=5, t=3)
+    >>> prob_x_form_1(f=3, k=3, T=5, t=3)
     Fraction(1, 10)
 
     Prob(AAB)
-    >>> prob_x(f=3, k=2, T=5, t=3)
+    >>> prob_x_form_1(f=3, k=2, T=5, t=3)
     Fraction(6, 10)
 
     Prob(ABB)
-    >>> prob_x(f=3, k=1, T=5, t=3)
+    >>> prob_x_form_1(f=3, k=1, T=5, t=3)
     Fraction(3, 10)
 
     """
@@ -44,7 +71,45 @@ def prob_x(f: int, k: int, T: int, t: int) -> Fraction:
     )
 
 
-def valeur_modale_target(f: int, t: int, T: int) -> Fraction:
+def prob_x(f: int, k: int, T: int, t: int) -> Decimal:
+    """ Computes probability of X = k in Lafon's paper
+
+    Parameters are renamed but they are basically:
+    - f = global_freq
+    - k = local_freq
+    - T = corpus_size
+    - t = sample size
+
+    Examples from the paper in p. 139
+
+    Prob(AAA)
+    >>> prob_x(f=296, k=5, T=61449, t=1084)
+    Fraction(1, 10)
+
+    Prob(AAB)
+    >>> prob_x(f=3, k=2, T=5, t=3)
+    Fraction(6, 10)
+
+    Prob(ABB)
+    >>> prob_x(f=3, k=1, T=5, t=3)
+    Fraction(3, 10)
+
+    """
+    log_prob = (
+        log(st(f)) +
+        log(st(T-f)) +
+        log(st(t)) +
+        log(st(T-t)) -
+        st(T) -
+        st(k) -
+        log(st(f-k)) -
+        log(st(t-k)) -
+        log(st(T-f-t+k))
+    )
+    return np.exp(log_prob)[0]
+
+
+def valeur_modale_target(f: int, t: int, T: int) -> Decimal:
     """ Calcule la valeur cible pour la valeur modale
 
     >>> valeur_modale_target(f=296, t=1084, T=61449)
